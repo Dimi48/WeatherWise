@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@theme {
+  /* This tells the app to use Inter, and if it fails, fallback directly to the Apple native font */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
 :root {
   --text: #6b6375;
   --text-h: #08060d;
@@ -90,7 +96,7 @@ h2 {
   letter-spacing: -0.24px;
   margin: 0 0 8px;
   @media (max-width: 1024px) {
-    font-size: 20px;
+    font-size: 30px;
   }
 }
 p {
