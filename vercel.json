@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/foursquare/(.*)",
+      "destination": "https://api.foursquare.com/v3/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

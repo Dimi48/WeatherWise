@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Cloud, Shirt, MapPin, AlertCircle, Home, Footprints, Thermometer, Wind, Droplets, ArrowDownUp, CalendarDays, List, ChevronLeft, Umbrella } from 'lucide-react';
+// UPDATE: Added 'X' to the imports for the close button on our new desktop warning
+import { Search, Cloud, Shirt, MapPin, AlertCircle, Home, Footprints, Thermometer, Wind, Droplets, ArrowDownUp, CalendarDays, List, ChevronLeft, Umbrella, X } from 'lucide-react';
 import { getClothingSuggestions, getCategoryIds } from './weatherLogic';
 import LocationCard from './LocationCard'; 
 import SavedCityCard from './SavedCityCard'; 
@@ -21,7 +22,7 @@ const categorizeClothing = (items) => {
   const categories = {
     base: { title: "Base Layers", icon: Shirt, color: "text-sky-400", items: [] },
     outer: { title: "Outerwear", icon: Cloud, color: "text-slate-300", items: [] },
-    acc: { title: "Accessories & Gear", icon: Umbrella, color: "text-white-400", items: [] }
+    acc: { title: "Accessories & Gear", icon: Umbrella, color: "text-emerald-400", items: [] }
   };
 
   items.forEach(item => {
@@ -68,10 +69,18 @@ function App() {
   const [savedCities, setSavedCities] = useState([]);
   const [showCityList, setShowCityList] = useState(false);
 
+  // NEW: State to control the desktop warning popup
+  const [showDesktopWarning, setShowDesktopWarning] = useState(false);
+
   const WEATHER_KEY = import.meta.env.VITE_WEATHER_API_KEY;
   const FOURSQUARE_KEY = import.meta.env.VITE_FOURSQUARE_API_KEY;
 
   useEffect(() => {
+    // NEW: Check if the screen is wider than a mobile device (768px)
+    if (window.innerWidth > 768) {
+      setShowDesktopWarning(true);
+    }
+
     const history = JSON.parse(localStorage.getItem('weatherWiseCities')) || [];
     setSavedCities(history);
 
@@ -176,6 +185,29 @@ function App() {
         className="fixed inset-0 -z-10 bg-cover bg-center transition-all duration-1000 ease-in-out"
         style={{ backgroundImage: currentBg }}
       />
+
+      {/* NEW: Desktop Warning Notification */}
+      {showDesktopWarning && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100] animate-in slide-in-from-top-4 fade-in duration-500">
+          <div className="bg-slate-900/80 backdrop-blur-xl border border-white/20 p-4 rounded-2xl shadow-2xl flex items-start gap-4">
+            <div className="text-sky-400 mt-0.5">
+              <AlertCircle size={24} />
+            </div>
+            <div className="flex-1 text-left">
+              <h3 className="font-heading font-semibold text-white text-sm tracking-wide">Desktop Detected</h3>
+              <p className="text-slate-300 text-xs mt-1 leading-relaxed font-medium">
+                WeatherWise is designed to be a mobile app. For the best experience, please open it from a mobile device.
+              </p>
+            </div>
+            <button 
+              onClick={() => setShowDesktopWarning(false)}
+              className="text-slate-400 hover:text-white transition-colors mt-0.5 shrink-0"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="min-h-screen w-full text-white font-sans text-center pb-[12vh]">
         <div className="max-w-md mx-auto p-6">
@@ -320,14 +352,12 @@ function App() {
               {/* SCREEN 2: CLOTHING */}
               {activeTab === 'clothing' && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 text-left mt-4">
-                  {/* UPDATE: Changed text-3xl to text-4xl, changed icon color to white, and kept size at 32 to match home header */}
                   <h2 className="font-heading text-4xl font-semibold mb-6 flex items-center gap-3 justify-center text-center drop-shadow-md tracking-tight">
                     <Shirt className="text-white drop-shadow-md" size={32} /> Wardrobe
                   </h2>
                   
                   {weather ? (
                     <div className="space-y-4">
-                      {/* UPDATE: Replaced bg-sky-500/20 with frosted glass styling to match other cards */}
                       <div className="bg-slate-900/60 backdrop-blur-xl border border-white/10 p-5 rounded-3xl mb-6 shadow-lg text-center">
                         <p className="text-sky-100 text-sm font-medium leading-relaxed drop-shadow-md">
                           It feels like <span className="font-semibold text-white">{Math.round(weather.main.feels_like)}°</span> with <span className="font-semibold text-white capitalize">{weather.weather[0].description}</span> outside. Here is your tailored packing list:
@@ -364,7 +394,7 @@ function App() {
               {activeTab === 'activities' && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 text-left mt-4">
                   <h2 className="font-heading text-3xl font-semibold mb-6 flex items-center gap-3 justify-center text-center drop-shadow-md tracking-tight">
-                    <MapPin className="text-white-400" size={32} /> Local Spots
+                    <MapPin className="text-emerald-400" size={32} /> Local Spots
                   </h2>
                   {weather ? (
                     <div className="space-y-4"> 
