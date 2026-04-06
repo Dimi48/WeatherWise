@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-// UPDATE: Added 'X' to the imports for the close button on our new desktop warning
 import { Search, Cloud, Shirt, MapPin, AlertCircle, Home, Footprints, Thermometer, Wind, Droplets, ArrowDownUp, CalendarDays, List, ChevronLeft, Umbrella, X } from 'lucide-react';
 import { getClothingSuggestions, getCategoryIds } from './weatherLogic';
 import LocationCard from './LocationCard'; 
@@ -68,15 +67,11 @@ function App() {
   
   const [savedCities, setSavedCities] = useState([]);
   const [showCityList, setShowCityList] = useState(false);
-
-  // NEW: State to control the desktop warning popup
   const [showDesktopWarning, setShowDesktopWarning] = useState(false);
 
   const WEATHER_KEY = import.meta.env.VITE_WEATHER_API_KEY;
-  const FOURSQUARE_KEY = import.meta.env.VITE_FOURSQUARE_API_KEY;
 
   useEffect(() => {
-    // NEW: Check if the screen is wider than a mobile device (768px)
     if (window.innerWidth > 768) {
       setShowDesktopWarning(true);
     }
@@ -130,7 +125,6 @@ function App() {
       });
 
       const { lat: fetchedLat, lon: fetchedLon } = weatherRes.data.coord;
-      const categories = getCategoryIds(weatherRes.data.main.temp, weatherRes.data.weather[0].main);
 
       try {
         const forecastUrl = lat && lon 
@@ -142,14 +136,27 @@ function App() {
         setForecast(dailyData);
       } catch (forecastErr) { console.error("Forecast failed:", forecastErr); }
 
+      // --- NEW: Wikipedia Geo API (Replaces Foursquare) ---
+      // This is 100% free, requires no API key, and will never return a 410 error!
       try {
-        const placesRes = await axios.get('/foursquare/places/search', {
-            params: { ll: `${fetchedLat},${fetchedLon}`, categories: categories, limit: 4 },
-            headers: { Authorization: `Bearer ${FOURSQUARE_KEY}`, accept: 'application/json', 'X-places-api-version': '2025-02-05' }
-        });
-        setActivities(placesRes.data.results || placesRes.data || []);
+        const wikiUrl = `https://en.wikipedia.org/w/api.php?action=query&list=geosearch&gscoord=${fetchedLat}|${fetchedLon}&gsradius=8000&gslimit=4&format=json&origin=*`;
+        const wikiRes = await axios.get(wikiUrl);
+        
+        const places = wikiRes.data.query.geosearch.map((place) => ({
+          id: place.pageid, 
+          name: place.title,
+          location: {
+            address: `${Math.round(place.dist)} meters away`
+          },
+          categories: [
+            { name: "Landmark" }
+          ],
+          wikiId: place.pageid // Pass this so the card can fetch the image
+        }));
+
+        setActivities(places);
       } catch (placeErr) {
-        setFsqError(placeErr.response?.data?.message || "Check your API Key.");
+        setFsqError("Unable to fetch local landmarks right now.");
       }
 
       return true; 
@@ -186,7 +193,6 @@ function App() {
         style={{ backgroundImage: currentBg }}
       />
 
-      {/* NEW: Desktop Warning Notification */}
       {showDesktopWarning && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md z-[100] animate-in slide-in-from-top-4 fade-in duration-500">
           <div className="bg-slate-900/80 backdrop-blur-xl border border-white/20 p-4 rounded-2xl shadow-2xl flex items-start gap-4">
@@ -212,7 +218,6 @@ function App() {
       <div className="min-h-screen w-full text-white font-sans text-center pb-[12vh]">
         <div className="max-w-md mx-auto p-6">
 
-          {/* THE SAVED CITIES LIST SCREEN */}
           {showCityList ? (
             <div className="animate-in fade-in slide-in-from-right-4 duration-300 text-left space-y-4 pb-12">
               <div className="flex items-center gap-2 mb-4">
@@ -256,9 +261,7 @@ function App() {
               )}
             </div>
           ) : (
-            /* --- MAIN APP DASHBOARD --- */
             <>
-              {/* SCREEN 1: HOME */}
               {activeTab === 'home' && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 mt-4">
                   <header className="mb-8">
@@ -349,7 +352,6 @@ function App() {
                 </div>
               )}
 
-              {/* SCREEN 2: CLOTHING */}
               {activeTab === 'clothing' && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 text-left mt-4">
                   <h2 className="font-heading text-4xl font-semibold mb-6 flex items-center gap-3 justify-center text-center drop-shadow-md tracking-tight">
@@ -390,7 +392,6 @@ function App() {
                 </div>
               )}
 
-              {/* SCREEN 3: ACTIVITIES */}
               {activeTab === 'activities' && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 text-left mt-4">
                   <h2 className="font-heading text-3xl font-semibold mb-6 flex items-center gap-3 justify-center text-center drop-shadow-md tracking-tight">
@@ -407,7 +408,7 @@ function App() {
                         <div className="space-y-4">
                           {activities.length > 0 ? (
                             activities.map((place, index) => (
-                              <LocationCard key={place.fsq_place_id || place.fsq_id || place.id || index} place={place} apiKey={FOURSQUARE_KEY} index={index} />
+                              <LocationCard key={place.id || index} place={place} index={index} />
                             ))
                           ) : (
                             <p className="text-slate-400 text-sm italic text-center py-4 drop-shadow-md">Searching for local spots...</p>
